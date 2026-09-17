@@ -1,4 +1,4 @@
-# Awais Reset Protocol — R1
+# Awais Reset Protocol — R1.1
 
 A mobile-first, local-first foundation for a personal fitness execution system. Its operating loop is **Command → Execute → Record → Adapt → Return**. No streak is required; the system counts returns and does not punish gaps.
 
@@ -39,7 +39,7 @@ vercel.json         Static Vite build/output configuration
 tests/              Domain and persistence tests
 ```
 
-The UI reads and writes `AppData` through `appService`, which uses `StorageAdapter`. Data is saved in a **version 2** envelope under the existing `awais-reset-r0` key. Version 1 data is migrated on load: a legacy active preview becomes a loggable active session, completed history gains status fields, and the next A/B mission is derived from completed normal sessions. Invalid or incompatible data falls back to clean data. Workout definitions remain separate from session history. The next mission is stored as `nextWorkoutDefinitionId`; it advances only when a GREEN or AMBER strength session is saved. RESET preserves the due mission. Calendar gaps never advance it.
+The UI reads and writes `AppData` through `appService`, which uses `StorageAdapter`. Data is saved in a **version 2** envelope under the existing `awais-reset-r0` key. Version 1 data is migrated on load: a legacy active preview becomes a loggable active session, completed history gains status fields, and the next A/B mission is derived from completed normal sessions. Invalid or incompatible data falls back to clean data. Workout definitions remain separate from session history. The cached `nextWorkoutDefinitionId` is recalculated from completed normal Strength A/B history on save, deletion, and load. RESET preserves the due mission. Calendar gaps never advance it.
 
 ## PWA behavior
 
@@ -65,7 +65,7 @@ Open the deployed HTTPS URL in Safari. Tap **Share**, choose **Add to Home Scree
 
 R1 stores data in this browser's `localStorage`. Active sessions, draft values, completed sets, cardio, debrief choices, and saved history survive ordinary refreshes. Data can disappear if browser/site data is cleared, storage is evicted, or the browser is used in a temporary/private session. Storage is tied to the exact site origin, so a Vercel preview URL and the production URL have separate data. There is no export, account, or cloud backup in R1. **Different browsers and devices do not share workout history or active session state.** Installing on a second phone starts with fresh local data. Offline shell availability depends on the browser retaining its service-worker cache.
 
-## R1 scope
+## R1.1 scope
 
 - Mobile-first shell with five destinations and persistent bottom navigation
 - Today mission, Green/Amber choice, compact signals, and mental signal
@@ -73,12 +73,14 @@ R1 stores data in this browser's `localStorage`. Active sessions, draft values, 
 - Live strength set logging with editable weight, reps, effort, and optional extra sets
 - Cardio logging for duration and applicable speed/incline fields
 - Persisted active session, exercise position, and compact completion debrief
-- Recent sessions with read-only logged detail and previous completed performance
+- Recent sessions with logged detail, previous completed performance, and confirmed deletion of saved workouts
 - Provisional calibration workouts A and B, plus future mode and running-stage types
 - Food, Progress, and Learn structures with honest empty states
 - Explicit GREEN, AMBER, and RESET start modes with shorter configured plans for AMBER/RESET; discard confirmation; A/B sequence and return events
 
 Starting a session creates one active `WorkoutSession` immediately. Every set, cardio field, and debrief choice updates the local session. **Complete workout** leads to a confirmation and debrief; **Save session** writes completed history and clears the active session. A RESET save records a return event and leaves the next normal A/B mission unchanged. The baseline weight remains reference data, not a logged weigh-in. Hydration and food check-in models exist, but entry controls are deferred.
+
+Open a saved workout from **Recent sessions** to delete it. The confirmation removes the complete session and its associated return event, if any. History, Today, Progress, the next mission, and previous performance then use the remaining sessions. This deletion is permanent in the current browser; cancelling the dialog leaves all data unchanged. **Discard active session** remains a separate action for an unfinished workout.
 
 ## Deferred to later releases
 

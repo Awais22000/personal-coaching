@@ -21,7 +21,7 @@ function latestCompleted(sessions: WorkoutSession[], predicate: (session: Workou
 }
 
 export function nextWorkoutId(sessions: WorkoutSession[]): WorkoutId {
-  const last = latestCompleted(sessions, session => session.mode !== 'RESET' && session.mode !== 'RECOVERY')
+  const last = latestCompleted(sessions, session => session.status === 'completed' && session.mode !== 'RESET' && session.mode !== 'RECOVERY')
   return last?.workoutDefinitionId === 'strength-a' ? 'strength-b' : 'strength-a'
 }
 
@@ -60,7 +60,7 @@ function migrateV1(data: unknown): AppData {
 export function loadAppData(adapter: StorageAdapter = localStorageAdapter): AppData {
   const envelope = adapter.read<Envelope>(KEY)
   if (!envelope) return initialData()
-  if (envelope.version === SCHEMA_VERSION && validV2(envelope.data)) return envelope.data
+  if (envelope.version === SCHEMA_VERSION && validV2(envelope.data)) return { ...envelope.data, nextWorkoutDefinitionId: nextWorkoutId(envelope.data.sessions) }
   if (envelope.version === 1) return migrateV1(envelope.data)
   return initialData()
 }
@@ -94,7 +94,7 @@ function createSession(workoutDefinitionId: WorkoutId, mode: TrainingMode, histo
 
 export function startWorkout(data: AppData, mode: TrainingMode = data.preferredMode): AppData {
   if (data.activeWorkout) return data
-  return { ...data, activeWorkout: createSession(data.nextWorkoutDefinitionId, mode, data.sessions) }
+  return { ...data, activeWorkout: createSession(nextWorkoutId(data.sessions), mode, data.sessions) }
 }
 
 export function discardActive(data: AppData): AppData { return { ...data, activeWorkout: null } }
@@ -181,13 +181,24 @@ export function saveSession(data: AppData, completedAt = new Date().toISOString(
   const active = data.activeWorkout
   if (!active || active.phase !== 'debrief') return data
   const completed: WorkoutSession = { ...active, status: 'completed', completedAt }
-  const normalStrength = active.mode !== 'RESET' && active.mode !== 'RECOVERY'
+  const sessions = [...data.sessions, completed]
   const previous = latestCompleted(data.sessions)
   const daysSinceLastSession = previous ? Math.max(0, Math.floor((new Date(completedAt).getTime() - new Date(previous.completedAt!).getTime()) / 86400000)) : 0
   return {
-    ...data, activeWorkout: null, preferredMode: 'GREEN', sessions: [...data.sessions, completed],
-    nextWorkoutDefinitionId: normalStrength ? (active.workoutDefinitionId === 'strength-a' ? 'strength-b' : 'strength-a') : data.nextWorkoutDefinitionId,
+    ...data, activeWorkout: null, preferredMode: 'GREEN', sessions,
+    nextWorkoutDefinitionId: nextWorkoutId(sessions),
     returnEvents: active.mode === 'RESET' ? [...data.returnEvents, { id: crypto.randomUUID(), date: completedAt.slice(0, 10), sessionId: active.id, daysSinceLastSession }] : data.returnEvents,
+  }
+}
+
+export function deleteCompletedSession(data: AppData, sessionId: string): AppData {
+  if (!data.sessions.some(session => session.id === sessionId && session.status === 'completed' && session.completedAt)) return data
+  const sessions = data.sessions.filter(session => session.id !== sessionId)
+  return {
+    ...data,
+    sessions,
+    returnEvents: data.returnEvents.filter(event => event.sessionId !== sessionId),
+    nextWorkoutDefinitionId: nextWorkoutId(sessions),
   }
 }
 

@@ -1,4 +1,5 @@
-import { ArrowLeft, ArrowRight, Check, Clock3 } from 'lucide-react'
+import { useState } from 'react'
+import { ArrowLeft, ArrowRight, Check, Clock3, Trash2 } from 'lucide-react'
 import { exercises, workouts, workoutPlan } from '../data/workouts'
 import type { WorkoutSession } from '../domain/models'
 import { sessionSummary } from '../services/appService'
@@ -13,10 +14,13 @@ export function SessionHistory({ sessions, onOpen }: { sessions: WorkoutSession[
   </section>
 }
 
-export function SessionDetail({ session, onBack }: { session: WorkoutSession; onBack: () => void }) {
+export function SessionDetail({ session, onBack, onDelete }: { session: WorkoutSession; onBack: () => void; onDelete: (id: string) => void }) {
+  const [confirmDelete, setConfirmDelete] = useState(false)
   const summary = sessionSummary(session, new Date(session.completedAt ?? session.startedAt))
   return <div className="screen-content"><button type="button" className="back-button" onClick={onBack}><ArrowLeft size={17}/> BACK TO TRAIN</button><div className="page-intro"><div><p className="eyebrow blue">SAVED SESSION · {dateLabel(session.completedAt ?? session.startedAt)}</p><h1>{workouts[session.workoutDefinitionId].title}</h1><p className="muted">{session.mode} · {summary.minutes} min · {summary.workingSets} working sets</p></div></div>
     <div className="history-detail-list">{workoutPlan(session.workoutDefinitionId, session.mode).map((item, index) => { const strength = session.exercises.find(log => log.exerciseId === item.exerciseId); const cardio = session.cardio.find(log => log.exerciseId === item.exerciseId); const logged = strength?.sets.filter(set => set.completed) ?? []; return <div className="history-detail-item" key={item.exerciseId}><span className="exercise-index">{String(index + 1).padStart(2, '0')}</span><div><h3>{exercises[item.exerciseId].name}</h3>{logged.length > 0 ? logged.map((set, setIndex) => <p key={setIndex}><Check size={14}/> Set {setIndex + 1}: {set.weightKg ?? 0} kg × {set.reps ?? 0}{set.effort ? ` · ${set.effort.toUpperCase()}` : ''}</p>) : cardio?.completed ? <p><Clock3 size={14}/>{cardio.minutes} min{cardio.speedKph !== undefined ? ` · ${cardio.speedKph} km/h` : ''}{cardio.inclinePercent !== undefined ? ` · ${cardio.inclinePercent}% incline` : ''}{cardio.effort ? ` · ${cardio.effort.toUpperCase()}` : ''}</p> : <p className="muted">Not logged</p>}</div></div> })}</div>
     <div className="detail-debrief"><span className="eyebrow">SESSION DEBRIEF</span><p>Overall: {session.overallEffort?.toUpperCase() ?? '—'} · Knees: {session.kneeStatus ?? '—'} · Breathing: {session.breathingStatus ?? '—'}</p>{session.notes && <p>{session.notes}</p>}</div>
+    <div className="session-delete-action"><button type="button" className="text-button quiet-danger" onClick={() => setConfirmDelete(true)}><Trash2 size={15}/> DELETE WORKOUT</button></div>
+    {confirmDelete && <div className="dialog-backdrop"><div className="confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="delete-workout-title"><h2 id="delete-workout-title">DELETE WORKOUT?</h2><p>This will permanently remove this workout and its logged sets/cardio data.</p><div className="dialog-actions"><button type="button" onClick={() => setConfirmDelete(false)}>CANCEL</button><button type="button" className="dialog-delete" onClick={() => onDelete(session.id)}>DELETE</button></div></div></div>}
   </div>
 }

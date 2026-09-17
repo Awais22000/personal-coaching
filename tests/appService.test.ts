@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { AppData, WorkoutSession } from '../src/domain/models'
 import type { StorageAdapter } from '../src/storage/storageAdapter'
-import { addSet, beginDebrief, completeCardio, completeSet, discardActive, getLatestExercisePerformance, initialData, loadAppData, nextWorkoutId, removeAddedSet, saveAppData, saveSession, setCurrentExercise, startWorkout, updateCardio, updateSet } from '../src/services/appService'
+import { addSet, beginDebrief, completeCardio, completeSet, deleteCompletedSession, discardActive, getLatestExercisePerformance, initialData, loadAppData, nextWorkoutId, removeAddedSet, saveAppData, saveSession, setCurrentExercise, startWorkout, updateCardio, updateSet } from '../src/services/appService'
 import { workoutPlan } from '../src/data/workouts'
 
 class MemoryStorage implements StorageAdapter {
@@ -69,17 +69,17 @@ describe('session sequence and storage', () => {
 
   it('reads previous performance only from the latest completed session', () => {
     let data = startWorkout(initialData())
-    data = updateSet(data, 'leg-press', 0, { weightKg: 50, reps: 10 })
-    data = completeSet(data, 'leg-press', 0)
+    data = updateSet(data, 'lat-pulldown', 0, { weightKg: 50, reps: 10 })
+    data = completeSet(data, 'lat-pulldown', 0)
     data = finish(data)
-    const latest = getLatestExercisePerformance(data.sessions, 'leg-press')
+    const latest = getLatestExercisePerformance(data.sessions, 'lat-pulldown')
     expect(latest?.sets[0]).toMatchObject({ weightKg: 50, reps: 10 })
-    let active = startWorkout({ ...data, nextWorkoutDefinitionId: 'strength-a' })
-    active = updateSet(active, 'leg-press', 0, { weightKg: 90, reps: 2 })
-    active = completeSet(active, 'leg-press', 0)
+    let active = startWorkout(data)
+    active = updateSet(active, 'lat-pulldown', 0, { weightKg: 90, reps: 2 })
+    active = completeSet(active, 'lat-pulldown', 0)
     const incompleteInHistory = { ...active.activeWorkout!, status: 'active' as const, completedAt: undefined }
-    expect(getLatestExercisePerformance([...data.sessions, incompleteInHistory], 'leg-press')?.sets[0].weightKg).toBe(50)
-    expect(getLatestExercisePerformance(discardActive(active).sessions, 'leg-press')?.sets[0].weightKg).toBe(50)
+    expect(getLatestExercisePerformance([...data.sessions, incompleteInHistory], 'lat-pulldown')?.sets[0].weightKg).toBe(50)
+    expect(getLatestExercisePerformance(discardActive(active).sessions, 'lat-pulldown')?.sets[0].weightKg).toBe(50)
   })
 
   it('keeps B due after a RESET return and records that return', () => {
@@ -124,5 +124,64 @@ describe('session sequence and storage', () => {
     expect(data.activeWorkout?.exercises.find(log => log.exerciseId === 'leg-press')?.sets).toHaveLength(2)
     const saved = finish(data)
     expect(saved.sessions[0].cardio[0]).toMatchObject({ minutes: 5, speedKph: 4.5, inclinePercent: 1, effort: 'easy', completed: true })
+  })
+})
+
+describe('completed workout deletion', () => {
+  it('removes a completed A and all its nested data permanently after reload', () => {
+    const storage = new MemoryStorage()
+    let data = startWorkout(initialData())
+    data = completeSet(updateSet(data, 'leg-press', 0, { weightKg: 50, reps: 10 }), 'leg-press', 0)
+    data = completeCardio(updateCardio(data, 'easy-cardio', { minutes: 5 }), 'easy-cardio')
+    data = finish(data)
+    const id = data.sessions[0].id
+    data = deleteCompletedSession(data, id)
+    expect(data.sessions).toHaveLength(0)
+    expect(data.nextWorkoutDefinitionId).toBe('strength-a')
+    saveAppData(data, storage)
+    expect(loadAppData(storage).sessions).toHaveLength(0)
+    expect(storage.values.get('awais-reset-r0')).not.toContain(id)
+  })
+
+  it('recalculates the next mission after deleting latest B and preserves A', () => {
+    let data = finish(startWorkout(initialData()))
+    const first = data.sessions[0]
+    data = saveSession(beginDebrief(startWorkout(data)), '2026-09-18T21:50:00.000Z')
+    const second = data.sessions[1]
+    expect(data.nextWorkoutDefinitionId).toBe('strength-a')
+    data = deleteCompletedSession(data, second.id)
+    expect(data.sessions).toEqual([first])
+    expect(data.nextWorkoutDefinitionId).toBe('strength-b')
+    expect(nextWorkoutId(data.sessions)).toBe('strength-b')
+  })
+
+  it('falls back to the earlier completed exercise performance', () => {
+    let data = completeSet(updateSet(startWorkout(initialData()), 'lat-pulldown', 0, { weightKg: 30, reps: 10 }), 'lat-pulldown', 0)
+    data = saveSession(beginDebrief(data), '2026-09-10T21:50:00.000Z')
+    data = completeSet(updateSet(startWorkout(data), 'lat-pulldown', 0, { weightKg: 35, reps: 10 }), 'lat-pulldown', 0)
+    data = saveSession(beginDebrief(data), '2026-09-15T21:50:00.000Z')
+    expect(getLatestExercisePerformance(data.sessions, 'lat-pulldown')?.sets[0].weightKg).toBe(35)
+    data = deleteCompletedSession(data, data.sessions[1].id)
+    expect(getLatestExercisePerformance(data.sessions, 'lat-pulldown')?.sets[0]).toMatchObject({ weightKg: 30, reps: 10 })
+  })
+
+  it('removes the return event for a deleted RESET session without changing the due mission', () => {
+    let data = finish(startWorkout(initialData()))
+    data = finish(startWorkout(data, 'RESET'))
+    const resetId = data.sessions[1].id
+    expect(data.returnEvents[0].sessionId).toBe(resetId)
+    data = deleteCompletedSession(data, resetId)
+    expect(data.sessions).toHaveLength(1)
+    expect(data.returnEvents).toHaveLength(0)
+    expect(data.nextWorkoutDefinitionId).toBe('strength-b')
+  })
+
+  it('leaves all data untouched when deletion is cancelled or the id is not a completed session', () => {
+    const saved = finish(startWorkout(initialData()))
+    const active = startWorkout(saved)
+    expect(deleteCompletedSession(active, 'not-confirmed')).toBe(active)
+    expect(deleteCompletedSession(active, active.activeWorkout!.id)).toBe(active)
+    expect(active.sessions).toEqual(saved.sessions)
+    expect(discardActive(active).sessions).toEqual(saved.sessions)
   })
 })
