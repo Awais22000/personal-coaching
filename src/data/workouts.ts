@@ -15,6 +15,23 @@ export const exercises: Record<string, ExerciseDefinition> = {
   'calf-raise': { id: 'calf-raise', name: 'Supported calf raise', category: 'strength', muscles: ['Calves'], why: 'Build ankle and lower-leg capacity for the road back to running.', how: 'Hold a stable support. Rise and lower with control.', avoid: 'Bouncing at the bottom.', defaultRepGuidance: '2 × 10–12' },
 }
 
+const anatomy: Record<string, Pick<import('../domain/models').ExerciseEducation, 'primaryMuscles' | 'secondaryMuscles' | 'anatomyView'>> = {
+  'leg-press': { primaryMuscles: ['Quadriceps', 'Gluteals'], secondaryMuscles: ['Hamstrings', 'Calves'], anatomyView: 'front' },
+  'chest-press': { primaryMuscles: ['Pectoralis major'], secondaryMuscles: ['Anterior deltoids', 'Triceps'], anatomyView: 'front' },
+  'lat-pulldown': { primaryMuscles: ['Latissimus dorsi', 'Upper back'], secondaryMuscles: ['Biceps', 'Forearms'], anatomyView: 'back' },
+  'leg-curl': { primaryMuscles: ['Hamstrings'], secondaryMuscles: ['Calves', 'Gluteals'], anatomyView: 'back' },
+  'cable-row': { primaryMuscles: ['Rhomboids', 'Mid trapezius'], secondaryMuscles: ['Biceps', 'Rear deltoids', 'Forearms'], anatomyView: 'back' },
+  'shoulder-press': { primaryMuscles: ['Deltoids'], secondaryMuscles: ['Triceps', 'Upper chest'], anatomyView: 'front' },
+  'box-squat': { primaryMuscles: ['Quadriceps', 'Gluteals'], secondaryMuscles: ['Hamstrings', 'Calves'], anatomyView: 'front' },
+  'incline-press': { primaryMuscles: ['Upper chest'], secondaryMuscles: ['Anterior deltoids', 'Triceps'], anatomyView: 'front' },
+  'assisted-row': { primaryMuscles: ['Upper back', 'Rhomboids'], secondaryMuscles: ['Biceps', 'Rear deltoids'], anatomyView: 'back' },
+  'calf-raise': { primaryMuscles: ['Gastrocnemius', 'Soleus'], secondaryMuscles: ['Foot and ankle stabilisers'], anatomyView: 'back' },
+}
+for (const exercise of Object.values(exercises)) {
+  const muscles = anatomy[exercise.id] ?? { primaryMuscles: exercise.muscles, secondaryMuscles: [], anatomyView: 'front' as const }
+  exercise.education = { ...muscles, why: exercise.why, instructions: [exercise.how, 'Move smoothly through a comfortable range.', 'Pause briefly, then return under control.'], formCues: ['Use a steady tempo', 'Keep the movement pain-free', 'Breathe without bracing excessively'], avoidList: [exercise.avoid], tutorial: { type: 'animation' } }
+}
+
 export const workouts: Record<WorkoutId, WorkoutDefinition> = {
   'strength-a': {
     id: 'strength-a', title: 'Strength A', subtitle: 'Full body · calibration', estimatedMinutes: { GREEN: 45, AMBER: 28, RESET: 18 },

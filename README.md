@@ -1,4 +1,4 @@
-# Awais Reset Protocol — R1.1
+# Awais Reset Protocol — R1.2
 
 A mobile-first, local-first foundation for a personal fitness execution system. Its operating loop is **Command → Execute → Record → Adapt → Return**. No streak is required; the system counts returns and does not punish gaps.
 
@@ -65,7 +65,7 @@ Open the deployed HTTPS URL in Safari. Tap **Share**, choose **Add to Home Scree
 
 R1 stores data in this browser's `localStorage`. Active sessions, draft values, completed sets, cardio, debrief choices, and saved history survive ordinary refreshes. Data can disappear if browser/site data is cleared, storage is evicted, or the browser is used in a temporary/private session. Storage is tied to the exact site origin, so a Vercel preview URL and the production URL have separate data. There is no export, account, or cloud backup in R1. **Different browsers and devices do not share workout history or active session state.** Installing on a second phone starts with fresh local data. Offline shell availability depends on the browser retaining its service-worker cache.
 
-## R1.1 scope
+## R1.2 scope
 
 - Mobile-first shell with five destinations and persistent bottom navigation
 - Today mission, Green/Amber choice, compact signals, and mental signal
@@ -74,6 +74,7 @@ R1 stores data in this browser's `localStorage`. Active sessions, draft values, 
 - Cardio logging for duration and applicable speed/incline fields
 - Persisted active session, exercise position, and compact completion debrief
 - Recent sessions with logged detail, previous completed performance, and confirmed deletion of saved workouts
+- Light clinical visual system with responsive anatomy diagrams, structured Overview / How To / Tutorial education, and an Exercise Library in Learn
 - Provisional calibration workouts A and B, plus future mode and running-stage types
 - Food, Progress, and Learn structures with honest empty states
 - Explicit GREEN, AMBER, and RESET start modes with shorter configured plans for AMBER/RESET; discard confirmation; A/B sequence and return events

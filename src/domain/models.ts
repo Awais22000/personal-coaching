@@ -23,6 +23,18 @@ export interface ExerciseDefinition {
   referenceImage?: string
   defaultRepGuidance: string
   cardioFields?: ('duration' | 'speed' | 'incline')[]
+  education?: ExerciseEducation
+}
+
+export interface ExerciseEducation {
+  primaryMuscles: string[]
+  secondaryMuscles: string[]
+  anatomyView: 'front' | 'back'
+  why: string
+  instructions: string[]
+  formCues: string[]
+  avoidList: string[]
+  tutorial: { type: 'video' | 'animation' | 'image-sequence'; asset?: string; url?: string; attribution?: string }
 }
 
 export interface WorkoutExercise {
