@@ -1,5 +1,5 @@
 import { exercises, workouts, workoutPlan } from '../data/workouts'
-import type { AppData, CardioLog, Effort, ExerciseLog, SetLog, TrainingMode, WorkoutId, WorkoutSession } from '../domain/models'
+import type { AppData, BodyWeightEntry, CardioLog, Effort, ExerciseLog, SetLog, TrainingMode, WorkoutId, WorkoutSession } from '../domain/models'
 import { localStorageAdapter } from '../storage/localStorageAdapter'
 import type { StorageAdapter } from '../storage/storageAdapter'
 
@@ -209,3 +209,16 @@ export function sessionsThisWeek(sessions: WorkoutSession[], now = new Date()): 
   start.setHours(0, 0, 0, 0)
   return sessions.filter(session => session.completedAt && new Date(session.completedAt) >= start).length
 }
+
+export function getWeightEntries(data: AppData): BodyWeightEntry[] {
+  return [...data.bodyWeights].sort((a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt))
+}
+
+export function getLatestWeight(data: AppData): BodyWeightEntry | undefined { return getWeightEntries(data)[0] }
+
+export function addWeightEntry(data: AppData, weightKg: number, date: string, note?: string): AppData {
+  if (!Number.isFinite(weightKg) || weightKg <= 0 || weightKg > 500 || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return data
+  return { ...data, bodyWeights: [...data.bodyWeights, { id: crypto.randomUUID(), date, weightKg: Math.round(weightKg * 10) / 10, createdAt: new Date().toISOString(), note }] }
+}
+
+export function deleteWeightEntry(data: AppData, id: string): AppData { return { ...data, bodyWeights: data.bodyWeights.filter(entry => entry.id !== id) } }

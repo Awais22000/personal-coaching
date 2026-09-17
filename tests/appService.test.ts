@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { AppData, WorkoutSession } from '../src/domain/models'
 import type { StorageAdapter } from '../src/storage/storageAdapter'
-import { addSet, beginDebrief, completeCardio, completeSet, deleteCompletedSession, discardActive, getLatestExercisePerformance, initialData, loadAppData, nextWorkoutId, removeAddedSet, saveAppData, saveSession, setCurrentExercise, startWorkout, updateCardio, updateSet } from '../src/services/appService'
+import { addSet, addWeightEntry, beginDebrief, completeCardio, completeSet, deleteCompletedSession, deleteWeightEntry, discardActive, getLatestExercisePerformance, getLatestWeight, getWeightEntries, initialData, loadAppData, nextWorkoutId, removeAddedSet, saveAppData, saveSession, setCurrentExercise, startWorkout, updateCardio, updateSet } from '../src/services/appService'
 import { workoutPlan } from '../src/data/workouts'
 
 class MemoryStorage implements StorageAdapter {
@@ -183,5 +183,24 @@ describe('completed workout deletion', () => {
     expect(deleteCompletedSession(active, active.activeWorkout!.id)).toBe(active)
     expect(active.sessions).toEqual(saved.sessions)
     expect(discardActive(active).sessions).toEqual(saved.sessions)
+  })
+})
+
+describe('weight tracking', () => {
+  it('keeps a fresh profile at baseline without fake history and supports add, order, reload, and delete', () => {
+    const storage = new MemoryStorage()
+    let data = initialData()
+    expect(getLatestWeight(data)).toBeUndefined()
+    data = addWeightEntry(data, 124.8, '2026-09-17')
+    data = addWeightEntry(data, 125.2, '2026-09-14')
+    expect(getWeightEntries(data).map(entry => entry.weightKg)).toEqual([124.8, 125.2])
+    saveAppData(data, storage)
+    data = loadAppData(storage)
+    expect(getLatestWeight(data)?.weightKg).toBe(124.8)
+    data = deleteWeightEntry(data, getLatestWeight(data)!.id)
+    expect(getLatestWeight(data)?.weightKg).toBe(125.2)
+    data = deleteWeightEntry(data, data.bodyWeights[0].id)
+    expect(getLatestWeight(data)).toBeUndefined()
+    expect(addWeightEntry(data, -2, '2026-09-18')).toBe(data)
   })
 })

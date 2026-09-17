@@ -93,7 +93,7 @@ export interface WorkoutSession {
   notes?: string
 }
 
-export interface BodyWeightEntry { id: string; date: string; weightKg: number }
+export interface BodyWeightEntry { id: string; date: string; weightKg: number; createdAt: string; note?: string }
 export interface HydrationEntry { id: string; date: string; glasses: number }
 export interface FoodDayCheckin {
   date: string
