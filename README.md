@@ -75,6 +75,8 @@ R1 stores data in this browser's `localStorage`. Active sessions, draft values, 
 - Persisted active session, exercise position, and compact completion debrief
 - Recent sessions with logged detail, previous completed performance, and confirmed deletion of saved workouts
 - Light clinical visual system with responsive anatomy diagrams, structured Overview / How To / Tutorial education, and an Exercise Library in Learn
+
+The anatomy artwork is a locally bundled, project-owned generated illustration at `public/anatomy/anatomy-muscular-figures.png`; it is not hotlinked and has no third-party attribution requirement. Tutorial media remains an explicit “Demonstration coming soon” state until approved media is supplied.
 - Provisional calibration workouts A and B, plus future mode and running-stage types
 - Food, Progress, and Learn structures with honest empty states
 - Explicit GREEN, AMBER, and RESET start modes with shorter configured plans for AMBER/RESET; discard confirmation; A/B sequence and return events
