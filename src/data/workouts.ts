@@ -31,6 +31,15 @@ for (const exercise of Object.values(exercises)) {
   const muscles = anatomy[exercise.id] ?? { primaryMuscles: exercise.muscles, secondaryMuscles: [], anatomyView: 'front' as const }
   exercise.education = { ...muscles, why: exercise.why, instructions: [exercise.how, 'Move smoothly through a comfortable range.', 'Pause briefly, then return under control.'], formCues: ['Use a steady tempo', 'Keep the movement pain-free', 'Breathe without bracing excessively'], avoidList: [exercise.avoid], tutorial: { type: 'animation' } }
 }
+const specificInstructions: Record<string, string[]> = {
+  'leg-press': ['SETUP — Set the seat so your knees track comfortably over your feet.', 'START POSITION — Place feet hip-width apart and keep your back supported.', 'PRESS — Drive through the whole foot without locking the knees.', 'RETURN — Lower until your range stays controlled and pain-free.'],
+  'chest-press': ['SETUP — Adjust the handles near mid-chest height.', 'START POSITION — Sit tall with shoulders relaxed against the pad.', 'PRESS — Move the handles forward without shrugging.', 'RETURN — Bring the handles back slowly until elbows are comfortable.'],
+  'lat-pulldown': ['SETUP — Sit with thighs secured and take a comfortable overhand grip.', 'START POSITION — Keep the chest comfortably tall and shoulders relaxed.', 'PULL — Draw elbows down toward your sides and the bar toward the upper chest.', 'RETURN — Let the arms extend slowly without swinging.'],
+  'leg-curl': ['SETUP — Align the machine pivot with your knee joint.', 'START POSITION — Keep hips down and ankles behind the pad.', 'CURL — Bring the pad toward the seat with a smooth squeeze.', 'RETURN — Lower the weight slowly without letting it drop.'],
+  'cable-row': ['SETUP — Sit with feet supported and knees slightly bent.', 'START POSITION — Sit tall with arms extended and shoulders relaxed.', 'PULL — Draw the handle toward the lower ribs while driving elbows back.', 'SQUEEZE — Briefly bring the shoulder blades together without shrugging.', 'RETURN — Extend the arms slowly and repeat without torso swing.'],
+  'shoulder-press': ['SETUP — Set the seat so handles begin just below shoulder height.', 'START POSITION — Keep ribs relaxed and wrists stacked over elbows.', 'PRESS — Drive the handles upward through a comfortable range.', 'RETURN — Lower smoothly without forcing the shoulders.'],
+}
+for (const [id, instructions] of Object.entries(specificInstructions)) if (exercises[id].education) exercises[id].education.instructions = instructions
 
 export const workouts: Record<WorkoutId, WorkoutDefinition> = {
   'strength-a': {
