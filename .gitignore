@@ -1,0 +1,59 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+build
+coverage
+.vitest
+test-results
+playwright-report
+.vercel
+*.local
+*.tsbuildinfo
+
+# Local configuration and secrets (examples may be committed intentionally)
+.env
+.env.*
+!.env.example
+!.env.sample
+*.pem
+*.key
+
+# Temporary files and local visual/test artifacts
+tmp/
+temp/
+screenshots/
+*.tmp
+*.temp
+*.bak
+*.orig
+*.swp
+*.swo
+__pycache__/
+*.pyc
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Unused starter-template assets
+public/favicon.svg
+public/icons.svg
+src/assets/
